@@ -1,11 +1,13 @@
 package ratebucket
 
 import (
+	"sync"
 	"sync/atomic"
 	"time"
 )
 
 type Bucket struct {
+	mu         sync.Mutex
 	a_tokens   atomic.Int64
 	lastRefill time.Time
 	cap        int64
@@ -48,6 +50,8 @@ func WithCap(c int64) BucketOption {
 }
 
 func (b *Bucket) tokens() int64 {
+	b.mu.Lock()
+	defer b.mu.Unlock()
 	now := time.Now()
 
 	elapsed := now.Sub(b.lastRefill).Seconds()
@@ -66,6 +70,6 @@ func (b *Bucket) Allow() bool {
 		return false
 	}
 
-	b.a_tokens.Store(t - 1)
+	b.a_tokens.Add(-1)
 	return true
 }

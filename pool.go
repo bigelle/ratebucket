@@ -17,14 +17,13 @@ type PoolConfig struct {
 }
 
 type Pool struct {
-	mu      sync.Mutex
-	buckets map[any]*Bucket
+	buckets sync.Map
 	config  PoolConfig
 }
 
 func NewPool() *Pool {
 	return &Pool{
-		buckets: make(map[any]*Bucket),
+		buckets: sync.Map{},
 		config: PoolConfig{
 			InitialTokens: defaultInitialTokens,
 			Capacity:      defaultCapacity,
@@ -35,24 +34,21 @@ func NewPool() *Pool {
 
 func NewPoolConfig(cfg PoolConfig) *Pool {
 	return &Pool{
-		buckets: make(map[any]*Bucket),
+		buckets: sync.Map{},
 		config:  cfg,
 	}
 }
 
 func (p *Pool) Allow(key any) bool {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	b, ok := p.buckets[key]
+	b, ok := p.buckets.Load(key)
 	if !ok {
 		b = NewBucket(
 			WithInitialTokens(p.config.InitialTokens),
 			WithCap(p.config.Capacity),
 			WithRate(p.config.RefillRate),
 		)
-		p.buckets[key] = b
+		p.buckets.Store(key, b)
 	}
 
-	return b.Allow()
+	return b.(*Bucket).Allow()
 }

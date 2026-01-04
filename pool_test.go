@@ -38,9 +38,7 @@ func TestBucketManager_AllowConcurrent(t *testing.T) {
 
 	key := "concurrentUser"
 
-	p.mu.Lock()
-	p.buckets[key] = NewBucket(WithInitialTokens(5), WithRate(0))
-	p.mu.Unlock()
+	p.buckets.Store(key, NewBucket(WithInitialTokens(5), WithRate(0)))
 
 	var wg sync.WaitGroup
 	results := make(chan bool, 20)

@@ -18,7 +18,9 @@ func TestBucket_tokens(t *testing.T) {
 
 	require.Equal(t, int64(5), b.tokens(), "initial tokens mismatch")
 
+	b.mu.Lock()
 	b.a_tokens.Store(4)
+	b.mu.Unlock()
 
 	time.Sleep(1100 * time.Millisecond)
 
@@ -70,7 +72,6 @@ func TestBucket_Allow(t *testing.T) {
 	require.True(t, b.Allow(), "third request should pass")
 	require.False(t, b.Allow(), "fourth request should be rejected")
 
-	// ждём секунду — должен появиться 1 токен
 	time.Sleep(1100 * time.Millisecond)
 	assert.True(t, b.Allow(), "after refill one request should pass")
 	assert.False(t, b.Allow(), "next request should still be rejected")
